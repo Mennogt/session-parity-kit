@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 from pathlib import Path
 
 import httpx
+import psutil
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -243,6 +245,65 @@ async def batch(request: Request) -> JSONResponse:
     return JSONResponse({"queued": queued, "selected": len(selected[:limit])})
 
 
+@router.get("/ui/system", include_in_schema=False)
+async def system(request: Request) -> JSONResponse:
+    """Живая телеметрия: CPU, память, потоки, входы в минуту, воркеры."""
+    container = getattr(request.app.state, "container", None)
+    if container is None:
+        return JSONResponse({"ready": False})
+
+    rss = threads = 0
+    cpu = 0.0
+    processes = 0
+    for proc in psutil.process_iter(["cmdline", "memory_info", "num_threads"]):
+        cmd = " ".join(proc.info["cmdline"] or [])
+        if "uvicorn" in cmd or "worker.main" in cmd:
+            processes += 1
+            rss += proc.info["memory_info"].rss
+            threads += proc.info["num_threads"]
+            try:
+                cpu += proc.cpu_percent(interval=None)
+            except Exception:
+                pass
+
+    memory = psutil.virtual_memory()
+    target = await asyncio.to_thread(container.store.meta_get, "worker_target")
+    success = await asyncio.to_thread(container.store.recent_successes, 60.0)
+    workers = await asyncio.to_thread(container.store.active_workers, 30.0)
+    depth = await container.queue.depth()
+    cpu_count = os.cpu_count() or 1
+    return JSONResponse({
+        "ready": True,
+        "cpu_percent": round(psutil.cpu_percent(interval=None) / cpu_count, 1),
+        "cpu_total_percent": round(psutil.cpu_percent(interval=None), 1),
+        "cpu_count": cpu_count,
+        "ram_used_mb": round(memory.used / 1048576),
+        "ram_total_mb": round(memory.total / 1048576),
+        "service_rss_mb": round(rss / 1048576, 1),
+        "service_threads": threads,
+        "processes": processes,
+        "logins_per_min": success,
+        "workers_active": workers,
+        "workers_target": int(target) if target else None,
+        "queue_depth": depth,
+    })
+
+
+@router.post("/ui/workers", include_in_schema=False)
+async def set_workers(request: Request) -> JSONResponse:
+    """Задать желаемое число воркеров (пул подстроится за ~3 секунды)."""
+    body = await request.json()
+    try:
+        count = max(1, min(64, int(body.get("count") or 1)))
+    except (TypeError, ValueError):
+        return JSONResponse({"error": "нужно целое число"}, status_code=400)
+    container = getattr(request.app.state, "container", None)
+    if container is None:
+        return JSONResponse({"error": "сервис не готов"}, status_code=503)
+    await asyncio.to_thread(container.store.meta_set, "worker_target", str(count))
+    return JSONResponse({"workers_target": count, "note": "применится в течение 3 секунд"})
+
+
 @router.get("/ui/overview", include_in_schema=False)
 async def overview(request: Request) -> JSONResponse:
     """Сводка для панели: очередь, воркеры, статистика, банк."""
@@ -429,6 +490,33 @@ PAGE = """<!doctype html>
         <tbody id="bank"><tr><td colspan="3" class="muted">загрузка…</td></tr></tbody>
       </table>
       <button class="ghost" id="verify">Проверить все сессии</button>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Телеметрия</h2>
+    <div class="grid" style="margin:0 0 14px">
+      <div class="card"><div class="label">CPU системы</div><div class="value acc" id="tCpu">—</div></div>
+      <div class="card"><div class="label">Память</div><div class="value" id="tRam">—</div></div>
+      <div class="card"><div class="label">Сервис: RSS / потоки</div><div class="value" id="tRss">—</div></div>
+      <div class="card"><div class="label">Входов в минуту</div><div class="value good" id="tKpm">—</div></div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Воркеры — применится за ~3 секунды</label>
+        <div class="fileline" style="margin-top:0">
+          <input type="number" id="workersInput" min="1" max="64" value="2" style="max-width:120px">
+          <button class="ghost small" id="applyWorkers">Применить</button>
+          <span class="muted" id="workersNow">—</span>
+        </div>
+        <div class="muted" style="margin-top:8px;font-size:12.5px">
+          воркер — это параллельное задание внутри процесса, а не поток
+        </div>
+      </div>
+      <div>
+        <label>Нагрузка: CPU (синий) и входы/мин (зелёный)</label>
+        <canvas id="spark" height="74" style="width:100%"></canvas>
+      </div>
     </div>
   </section>
 
@@ -664,6 +752,58 @@ $("batchAll").addEventListener("click", async () => {
     await Promise.all([loadOverview(), loadJobs()]);
   } catch (e) { toast("не удалось запустить пачку", true); }
   finally { button.disabled = false; button.textContent = "Запустить все аккаунты"; }
+});
+
+const sparkData = { cpu: [], kpm: [] };
+function drawSpark() {
+  const canvas = $("spark");
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width = canvas.clientWidth * 2;
+  const height = canvas.height = 148;
+  ctx.clearRect(0, 0, width, height);
+  const draw = (series, color, scale) => {
+    if (series.length < 2) return;
+    ctx.beginPath();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = color;
+    series.forEach((value, index) => {
+      const x = (index / (series.length - 1)) * width;
+      const y = height - Math.min(1, value / scale) * (height - 6) - 3;
+      if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  };
+  draw(sparkData.cpu, "#2f81f7", 100);
+  draw(sparkData.kpm, "#3fb950", Math.max(1, ...sparkData.kpm));
+}
+
+async function loadSystem() {
+  try {
+    const data = await api("/ui/system");
+    if (!data.ready) return;
+    $("tCpu").textContent = data.cpu_total_percent + " %";
+    $("tRam").textContent = data.ram_used_mb + " / " + data.ram_total_mb + " ГБ·МБ";
+    $("tRam").textContent = (data.ram_used_mb / 1024).toFixed(1) + " / " +
+                            (data.ram_total_mb / 1024).toFixed(0) + " ГБ";
+    $("tRss").textContent = data.service_rss_mb + " МБ / " + data.service_threads;
+    $("tKpm").textContent = data.logins_per_min;
+    $("workersNow").textContent = "сейчас активно: " + data.workers_active +
+      (data.workers_target ? " · цель: " + data.workers_target : "");
+    if (data.workers_target) $("workersInput").value = data.workers_target;
+    sparkData.cpu.push(data.cpu_total_percent || 0);
+    sparkData.kpm.push(data.logins_per_min || 0);
+    if (sparkData.cpu.length > 60) { sparkData.cpu.shift(); sparkData.kpm.shift(); }
+    drawSpark();
+  } catch (error) { /* сервис перезапускается */ }
+}
+
+$("applyWorkers").addEventListener("click", async () => {
+  const count = Number($("workersInput").value || 2);
+  try {
+    const data = await post("/ui/workers", { count });
+    toast("воркеров задано: " + data.workers_target + " · " + (data.note || ""));
+    await loadSystem();
+  } catch (error) { toast("не удалось применить", true); }
 });
 
 const tick = () => {

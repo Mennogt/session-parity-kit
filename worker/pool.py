@@ -60,9 +60,37 @@ class WorkerPool:
         self._sweepers = [
             asyncio.create_task(self._sweep_jobs()),
             asyncio.create_task(self._sweep_profiles()),
+            asyncio.create_task(self._scale_loop()),
         ]
         log(logr, 20, "пул воркеров запущен", workers=len(self.workers),
             queue=str(self.s.queue_backend))
+
+    async def _scale_loop(self) -> None:
+        """Подстраивать число воркеров под значение в meta.
+
+        Панель пишет желаемое количество в `worker_target`, пул читает его
+        раз в три секунды: новые задачи добавляются, лишние снимаются.
+        """
+        while not self.stop.is_set():
+            await asyncio.sleep(3)
+            try:
+                raw = self.store.meta_get("worker_target")
+                desired = max(1, min(64, int(raw))) if raw else len(self.workers)
+            except Exception:
+                continue
+            while len(self.workers) < desired:
+                worker = Worker(
+                    self.s, self.store, self.queue, self.profiles, self.flow,
+                    self.provider, index=len(self.workers), governor=self.governor,
+                )
+                self.workers.append(worker)
+                self._tasks.append(asyncio.create_task(worker.run(self.stop)))
+                log(logr, 20, "воркер добавлен", workers=len(self.workers))
+            while len(self.workers) > desired:
+                self.workers.pop()
+                task = self._tasks.pop()
+                task.cancel()
+                log(logr, 20, "воркер снят", workers=len(self.workers))
 
     async def _sweep_jobs(self) -> None:
         while not self.stop.is_set():
