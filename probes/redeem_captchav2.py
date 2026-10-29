@@ -4,7 +4,7 @@
 может ответить `200 {"redemption_token": "..."}` — без интерактива.
 Проверяем, принимает ли платформа этот токен при повторе входа.
 
-    python -u -m probes.redeem_captchav2 --account eplc_crew2009
+    python -u -m probes.redeem_captchav2 --account example_account
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ def b64(obj) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--account", default="eplc_crew2009")
+    ap.add_argument("--account", default="example_account")
     ap.add_argument("--out", default="var/redeem-captchav2.json")
     args = ap.parse_args()
 

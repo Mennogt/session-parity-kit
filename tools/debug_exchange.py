@@ -3,7 +3,7 @@
 Печатает заголовки и состав тела для запросов к auth.roblox.com, чтобы
 сравнить с зондом, который получает проверку с идентификатором.
 
-    python -u -m tools.debug_exchange --account eplc_crew2009 --proxy-url <url>
+    python -u -m tools.debug_exchange --account example_account --proxy-url <url>
 """
 
 from __future__ import annotations
@@ -63,7 +63,7 @@ async def run(account: dict, proxy: str | None) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--account", default="eplc_crew2009")
+    ap.add_argument("--account", default="example_account")
     ap.add_argument("--proxy-url", default=None)
     args = ap.parse_args()
     os.environ.setdefault("SPK_PRIME_SESSION", "true")

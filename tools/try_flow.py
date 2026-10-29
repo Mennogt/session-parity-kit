@@ -3,7 +3,7 @@
 Запускает полный путь так, как его выполняет воркер: подпись, обмен,
 прохождение проверки по HTTP, контрольный запрос.
 
-    python -u -m tools.try_flow --account eplc_crew2009 --proxy-url <url>
+    python -u -m tools.try_flow --account example_account --proxy-url <url>
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ async def run(account: dict, proxy: str | None) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--account", default="eplc_crew2009")
+    ap.add_argument("--account", default="example_account")
     ap.add_argument("--proxy-url", default=None)
     ap.add_argument("--out", default="var/try-flow.json")
     args = ap.parse_args()

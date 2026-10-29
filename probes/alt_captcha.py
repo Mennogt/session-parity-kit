@@ -32,7 +32,7 @@ CONTINUE = "https://apis.roblox.com/challenge/v1/continue"
 
 def main() -> int:
     accounts = json.loads(Path("var/accounts.json").read_text(encoding="utf-8"))
-    account = next(a for a in accounts if a["login"] == "Gray43960")
+    account = next(a for a in accounts if a["login"] == "example_account")
 
     with httpx.Client(timeout=120, follow_redirects=False) as client:
         client.get("https://www.roblox.com/login", headers={**H, "Accept": "text/html"})

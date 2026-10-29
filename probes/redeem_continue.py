@@ -5,7 +5,7 @@
     PoW -> continue -> captchav2 -> /v2/captcha -> redemption_token
         -> continue(тип captchav2, метаданные с токеном) -> повтор входа
 
-    python -u -m probes.redeem_continue --account RedJack69461
+    python -u -m probes.redeem_continue --account example_account
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ def b64(obj) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--account", default="RedJack69461")
+    ap.add_argument("--account", default="example_account")
     args = ap.parse_args()
 
     accounts = json.loads(Path("var/accounts.json").read_text(encoding="utf-8"))
