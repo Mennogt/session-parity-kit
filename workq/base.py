@@ -1,0 +1,19 @@
+"""Транспорт заданий. Доставляет только идентификаторы."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+
+class QueueBackend(Protocol):
+    async def put(self, job_id: str) -> None: ...
+
+    async def get(self, timeout: float, worker_id: str) -> str | None: ...
+
+    async def depth(self) -> int: ...
+
+    async def ack(self, job_id: str, worker_id: str) -> None: ...
+
+    async def close(self) -> None: ...
+
+    async def requeue_expired(self) -> int: ...

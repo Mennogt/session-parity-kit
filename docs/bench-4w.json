@@ -1,0 +1,31 @@
+{
+  "params": {
+    "api": "http://127.0.0.1:8080",
+    "count": 40,
+    "concurrency": 8,
+    "login_prefix": "b4_",
+    "secret": "bench_not_real",
+    "timeout": 300.0,
+    "out": "docs\\bench-4w.json"
+  },
+  "wall_seconds": 6.13,
+  "jobs": 40,
+  "jobs_per_min": 391.7,
+  "success": 0,
+  "success_per_min": 0.0,
+  "statuses": {
+    "BAD_CREDENTIALS": 40
+  },
+  "flow_ms": {
+    "p50": 554.5,
+    "p95": 632.6,
+    "p99": 646.8,
+    "mean": 560.2
+  },
+  "wall_ms": {
+    "p50": 1099.0,
+    "p95": 1430.1,
+    "p99": 1459.5
+  },
+  "at": "2026-10-29T13:40:38+0300"
+}

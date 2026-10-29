@@ -1,0 +1,30 @@
+# Виртуальное окружение и кэш
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Секреты и рабочие данные: в репозиторий не попадают
+.env
+*.pem
+*.key
+var/*
+!var/README.md
+!var/templates/
+!var/templates/*
+fixtures/
+
+# Базы и журналы
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# Служебное
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+docs/bench-*.json
+fixup_encoding.py

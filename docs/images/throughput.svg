@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="234" viewBox="0 0 860 234" role="img" aria-label="Пропускная способность сервиса">
+<rect width="860" height="234" fill="#ffffff"/>
+<text x="32" y="44" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="21" font-weight="600" fill="#1f2328">Пропускная способность сервиса</text>
+<text x="32" y="70" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#656d76">4 воркера, SQLite; разница только в способе открытия соединения</text>
+<text x="32" y="116" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" fill="#1f2328">WAL на каждом соединении</text>
+<rect x="250" y="102" width="490" height="20" rx="5" fill="#eef1f4"/>
+<rect x="250" y="102" width="118.6" height="20" rx="5" fill="#cf222e"/>
+<text x="380.6" y="117" font-family="Consolas, Menlo, monospace" font-size="13" fill="#656d76">94.8 задания/мин</text>
+<text x="32" y="170" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" fill="#1f2328">WAL один раз, соединение на поток</text>
+<rect x="250" y="156" width="490" height="20" rx="5" fill="#eef1f4"/>
+<rect x="250" y="156" width="490.0" height="20" rx="5" fill="#1a7f37"/>
+<text x="752.0" y="171" font-family="Consolas, Menlo, monospace" font-size="13" fill="#656d76">391.7 задания/мин</text>
+</svg>

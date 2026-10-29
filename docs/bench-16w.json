@@ -1,0 +1,31 @@
+{
+  "params": {
+    "api": "http://127.0.0.1:8080",
+    "count": 60,
+    "concurrency": 16,
+    "login_prefix": "b16c_",
+    "secret": "bench_not_real",
+    "timeout": 300.0,
+    "out": "docs\\bench-16w.json"
+  },
+  "wall_seconds": 3.67,
+  "jobs": 60,
+  "jobs_per_min": 981.1,
+  "success": 0,
+  "success_per_min": 0.0,
+  "statuses": {
+    "BAD_CREDENTIALS": 60
+  },
+  "flow_ms": {
+    "p50": 596.5,
+    "p95": 684.2,
+    "p99": 831.5,
+    "mean": 602.8
+  },
+  "wall_ms": {
+    "p50": 861.5,
+    "p95": 1096.9,
+    "p99": 1314.3
+  },
+  "at": "2026-10-29T13:42:32+0300"
+}

@@ -1,0 +1,57 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    command: ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+    environment:
+      SPK_QUEUE_BACKEND: redis
+      SPK_REDIS_URL: redis://redis:6379/0
+      SPK_STORE_PATH: /data/spk.db
+      SPK_PROFILE_FILE: /data/profiles.json
+      SPK_LOG_JSON: "true"
+    volumes:
+      - ./var:/data
+      - ./fixtures:/app/fixtures
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build: .
+    command: ["python", "-m", "worker.main"]
+    environment:
+      SPK_QUEUE_BACKEND: redis
+      SPK_REDIS_URL: redis://redis:6379/0
+      SPK_STORE_PATH: /data/spk.db
+      SPK_PROFILE_FILE: /data/profiles.json
+      SPK_WORKER_COUNT: "16"
+      SPK_METRICS_PORT: "9090"
+      SPK_LOG_JSON: "true"
+    volumes:
+      - ./var:/data
+      - ./fixtures:/app/fixtures
+    ports:
+      - "9090:9090"   # метрики процесса воркеров: Prometheus скрейпит отдельно
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 1
+    # Масштабирование: docker compose up -d --scale worker=4
