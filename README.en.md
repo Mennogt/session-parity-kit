@@ -126,9 +126,16 @@ python -m tools.launch
 What it gives you:
 
 * sign-in by login and password — the live HTTP path with no captcha;
+* **bulk import**: a file or text of `login:password`, a proxy list, batch runs;
 * session bank: state, one-click verification, cookie copy;
 * queue and recent jobs with statuses and steps;
 * live counters for workers, queue depth and successful sign-ins.
+
+The importer accepts `login:password`, `login;password` and
+`login<TAB>password`; `#` lines are skipped and the password may contain a
+colon. Re-importing updates the password instead of creating a duplicate.
+Proxies may be `http://user:pass@host:port`, `socks5://...` or plain
+`host:port` — the default scheme is `http`.
 
 The dashboard binds to `127.0.0.1` and needs no build step or extra
 dependencies.
