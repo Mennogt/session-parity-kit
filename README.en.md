@@ -113,6 +113,26 @@ sequenceDiagram
 
 ---
 
+## Dashboard
+
+One command starts everything and opens the browser:
+
+```bash
+python -m tools.launch
+```
+
+![Dashboard](docs/images/ui.png)
+
+What it gives you:
+
+* sign-in by login and password — the live HTTP path with no captcha;
+* session bank: state, one-click verification, cookie copy;
+* queue and recent jobs with statuses and steps;
+* live counters for workers, queue depth and successful sign-ins.
+
+The dashboard binds to `127.0.0.1` and needs no build step or extra
+dependencies.
+
 ## Quick start
 
 Python 3.11+ (tested on 3.14), Redis optional.

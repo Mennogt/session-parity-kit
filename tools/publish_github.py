@@ -32,7 +32,7 @@ API = "https://api.github.com"
 # Что не публикуем никогда.
 SKIP_DIRS = {".git", ".venv", "__pycache__", ".pytest_cache", "node_modules",
              "var", "fixtures"}
-SKIP_SUFFIXES = {".db", ".db-wal", ".db-shm", ".log", ".pem", ".key", ".pyc", ".png"}
+SKIP_SUFFIXES = {".db", ".db-wal", ".db-shm", ".log", ".pem", ".key", ".pyc"}
 SKIP_FILES = {".env", "fixup_encoding.py"}
 
 
@@ -97,6 +97,8 @@ def collect_files(root: Path) -> list[tuple[str, bytes]]:
             print(f"  пропущен workflow (нужен scope workflow): {rel.as_posix()}")
             continue
         if path.suffix.lower() in SKIP_SUFFIXES or path.name in SKIP_FILES:
+            continue
+        if path.suffix.lower() == ".png" and "docs/images" not in rel.as_posix():
             continue
         if rel.parts and rel.parts[0].startswith(".") and rel.parts[0] not in {".github", ".gitattributes", ".gitignore", ".env.example"}:
             continue

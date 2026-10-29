@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from api.routes import router
+from api.ui import router as ui_router
 from core.config import Settings, get_settings
 from core.logging import get_logger, setup_logging
 from obs import metrics
@@ -70,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.include_router(router)
+    app.include_router(ui_router)
 
     @app.exception_handler(Exception)
     async def _unhandled(request, exc: Exception):  # pragma: no cover - защита от 500 без тела
